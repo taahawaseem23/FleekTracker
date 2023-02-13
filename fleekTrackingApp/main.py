@@ -29,7 +29,7 @@ def track():
 
     # API headers
     headers = {
-        'Authorization': 'Bearer apik_1vLgnO8wT7t8O5dvvR8qDhFthGArkm',
+        'Authorization': 'Bearer <API-KEY>',
         'Content-Type': 'application/json; charset=utf-8'
     }
 
