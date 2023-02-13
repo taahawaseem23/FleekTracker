@@ -1,7 +1,6 @@
 from flask import Flask, render_template, request
 import requests
 import json
-import sys
 
 # Create a Flask application
 app = Flask(__name__, template_folder='templates')
