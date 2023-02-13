@@ -11,14 +11,12 @@ app = Flask(__name__, template_folder='templates')
 @app.route('/')
 def index():
     # Render the index.html template
-    #print('Hello world!', file=sys.stderr)
     return render_template('index.html')
-    #return "Hello World!"
 
-# Define the track route
+
+# Define route to update index.html with data
 @app.route('/', methods=['POST'])
 def track():
-    print('Hello world!', file=sys.stderr)
     # Get the tracking number from the form data
     tracking_number = request.form['tracking_number']
 
@@ -37,18 +35,22 @@ def track():
     }
 
     try:
+        # Make the API request to retrieve courier names
         couriers_url = 'https://api.ship24.com/public/v1/couriers'
         couriers = requests.get(couriers_url, headers=headers)
 
+        # Raise an exception if the API response is not successful
         couriers.raise_for_status()
 
+        # Get the JSON data from the API response
         couriers_json = couriers.json()
+
+        # Create an array consisting of all courier details
         couriers_array = couriers_json.get('data').get('couriers')
 
     except requests.exceptions.RequestException as e:
-        # Return an error message if an exception was raised
-        return render_template('index.html', error_message = 'error')
-
+        # Render an error message on the same page if there is an exception
+        return render_template('index.html', error_message='error')
 
     try:
         # Make the API request
@@ -65,8 +67,9 @@ def track():
         tracker = trackings[0]
         events = tracker.get('events')
         shipment = tracker.get('shipment')
-        status = shipment.get('statusMilestone').strip()
+        status = shipment.get('statusMilestone').strip() #Get status milestone
 
+        # Define dictionary for all status codes
         final_status_dict = {
             "pending": 'The shipment doesn’t have events available yet or can’t be found.',
             "info_received": 'The shipment has been declared electronically and/or is in preparation by the shipper.',
@@ -78,44 +81,35 @@ def track():
             "exception": "The shipment can’t be delivered due to issues that seems to be final."
         }
 
+        # Fetch the corresponding message to the status
         final_status = final_status_dict[status]
 
+        # Fetch information from all tracking events
         tracking_events = []
         for i in events:
-            courierCode = i.get('courierCode').strip()
+            courierCode = i.get('courierCode').strip() # Fetch courier code
             for j in couriers_array:
                 if courierCode == j['courierCode']:
-                    courierName= j['courierName'].strip()
-                    courierWebsite = j['website'].strip()
-                    print(courierWebsite)
+                    courierName = j['courierName'].strip() # Fetch courier name
+                    courierWebsite = j['website'].strip() # Fetch courier website
 
             tracking_events.append({
-                "status": i.get('status'),
-                "datetime": i.get('datetime'),
-                "location": i.get('location'),
-                "courierCode": i.get('courierCode'),
-                "courierName": courierName,
-                "courierWebsite": courierWebsite
+                "status": i.get('status'), # Add tracking event status
+                "datetime": i.get('datetime'), # Add tracking event date and time
+                "location": i.get('location'), # Add tracking event location
+                "courierCode": i.get('courierCode'), # Add tracking event courier code
+                "courierName": courierName, # Add tracking event courier name
+                "courierWebsite": courierWebsite # Add tracking event courier website
             })
 
-        # Get the carrier detected by the API
-        #carrier_detected = response_json.get('courierName', 'Unknown')
-
-        # Get the tracking updates for the tracking number
-        #tracking_updates = response_json.get('track', [])
-
-        # Get the final status of delivered if the item is indeed delivered
-        #final_status = 'Delivered' if response_json.get('deliveryStatus') == 'Delivered' else 'Not delivered'
-
-        # Render the track.html template with the tracking information
+        # Return template to render
         return render_template('index.html', tracking_updates=tracking_events,
                                final_status=final_status)
     except requests.exceptions.RequestException as e:
-        # Return an error message if an exception was raised
-        return render_template('index.html', error_message = 'error')
+        # Render an error message on the same page if there is an exception
+        return render_template('index.html', error_message='error')
 
 
 # Run the application if this script is run as the main program
 if __name__ == '__main__':
     app.run(debug=True)
-
